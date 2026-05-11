@@ -442,7 +442,8 @@ body {
 }
 
 .validation-msg.success { color: var(--accent-success); }
-.validation-msg.error { color: var(--accent-error); }
+.validation-msg.error   { color: var(--accent-error); }
+.validation-msg.idle    { color: var(--text-secondary); }
 
 .status-right {
     color: var(--text-secondary);

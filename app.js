@@ -45,6 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
         timestamp: "2026-05-11T22:00:00Z"
     }, null, 2);
 
+    // SVG icon path data — defined early so setValidation() can use them during init()
+    const SVG_CHECK = '<polyline points="20 6 9 17 4 12"></polyline>';
+    const SVG_ALERT = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
+    const SVG_IDLE  = '<line x1="5" y1="12" x2="19" y2="12"></line>';
+
     // Initialize
     init();
 
@@ -231,17 +236,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Editor & JSON Logic ---
 
     function handleJsonInput() {
-        setUnsaved(true);
         const raw = elements.jsonInput.value;
         elements.charCount.textContent = `${raw.length} chars`;
         toggleEmptyState(raw);
 
         if (!raw.trim()) {
-            setValidation(false, 'Empty');
+            setValidation('idle', '—');
             parsedJsonCache = null;
-            elements.treeContainer.innerHTML = '<div class="tree-placeholder">Enter JSON to view tree.</div>';
+            clearTreePlaceholder();
             return;
         }
+
+        setUnsaved(true);
 
         try {
             parsedJsonCache = JSON.parse(raw);
@@ -257,6 +263,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function clearTreePlaceholder() {
+        // Remove all children safely without innerHTML
+        while (elements.treeContainer.firstChild) {
+            elements.treeContainer.removeChild(elements.treeContainer.firstChild);
+        }
+        const placeholder = document.createElement('div');
+        placeholder.className = 'tree-placeholder';
+        placeholder.textContent = 'Enter JSON to view tree.';
+        elements.treeContainer.appendChild(placeholder);
+    }
+
     function toggleEmptyState(raw) {
         const isEmpty = !raw || !raw.trim();
         elements.emptyState.style.display = isEmpty ? 'flex' : 'none';
@@ -264,33 +281,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Build validation UI with safe DOM APIs — no innerHTML with user-controlled data.
     function makeSvgIcon(pathData) {
-        const ns = 'http://www.w3.org/2000/svg';
-        const svg = document.createElementNS(ns, 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('width', '16');
-        svg.setAttribute('height', '16');
-        svg.setAttribute('stroke', 'currentColor');
-        svg.setAttribute('stroke-width', '2');
-        svg.setAttribute('fill', 'none');
-        // pathData is a static constant defined in our own code, not user input.
-        svg.innerHTML = pathData;
-        return svg;
+        const div = document.createElement('div');
+        div.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">${pathData}</svg>`;
+        return div.firstChild;
     }
 
-    const SVG_CHECK  = '<polyline points="20 6 9 17 4 12"></polyline>';
-    const SVG_ALERT  = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
-
-    function setValidation(isValid, message) {
+    function setValidation(state, message) {
         const msg = elements.validationMsg;
-        msg.className = isValid ? 'validation-msg success' : 'validation-msg error';
-        // Clear previous content safely
+        const isValid = state === true;
+        const isIdle  = state === 'idle';
+        msg.className = isValid ? 'validation-msg success'
+                      : isIdle  ? 'validation-msg idle'
+                      :           'validation-msg error';
         while (msg.firstChild) msg.removeChild(msg.firstChild);
-
-        msg.appendChild(makeSvgIcon(isValid ? SVG_CHECK : SVG_ALERT));
-
+        msg.appendChild(makeSvgIcon(isValid ? SVG_CHECK : isIdle ? SVG_IDLE : SVG_ALERT));
         const textSpan = document.createElement('span');
-        // Use textContent so error messages from JSON.parse cannot inject markup.
-        textSpan.textContent = message;
+        textSpan.textContent = message; // textContent prevents XSS from JSON.parse error strings
         msg.appendChild(textSpan);
     }
 
@@ -322,15 +328,10 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.copyBtn.classList.add('copy-success');
             // Build "Copied!" state with safe DOM APIs
             while (elements.copyBtn.firstChild) elements.copyBtn.removeChild(elements.copyBtn.firstChild);
-            const ns = 'http://www.w3.org/2000/svg';
-            const checkSvg = document.createElementNS(ns, 'svg');
-            checkSvg.setAttribute('viewBox', '0 0 24 24');
-            checkSvg.setAttribute('width', '18');
-            checkSvg.setAttribute('height', '18');
-            checkSvg.setAttribute('stroke', 'currentColor');
-            checkSvg.setAttribute('stroke-width', '2');
-            checkSvg.setAttribute('fill', 'none');
-            checkSvg.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>'; // static constant
+            
+            const div = document.createElement('div');
+            div.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            const checkSvg = div.firstChild;
             const copiedLabel = document.createElement('span');
             copiedLabel.textContent = 'Copied!';
             elements.copyBtn.appendChild(checkSvg);
