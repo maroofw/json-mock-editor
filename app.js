@@ -59,11 +59,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State Management ---
     
+    // NOTE: localStorage is unencrypted and readable by any JS on the page.
+    // Do NOT store sensitive/production credentials here.
     function loadMocks() {
         const stored = localStorage.getItem('jsonMocks');
         if (stored) {
             try {
-                mocks = JSON.parse(stored);
+                const parsed = JSON.parse(stored);
+                // Guard against prototype pollution: only accept plain arrays of objects
+                if (Array.isArray(parsed) && parsed.every(m => m && typeof m === 'object' && !Array.isArray(m))) {
+                    mocks = parsed.map(m => ({
+                        id: String(m.id ?? ''),
+                        name: String(m.name ?? 'Unnamed Mock'),
+                        content: String(m.content ?? '')
+                    }));
+                } else {
+                    mocks = [];
+                }
             } catch (e) {
                 mocks = [];
             }
@@ -215,14 +227,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Build validation UI with safe DOM APIs — no innerHTML with user-controlled data.
+    function makeSvgIcon(pathData) {
+        const ns = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '16');
+        svg.setAttribute('height', '16');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('fill', 'none');
+        // pathData is a static constant defined in our own code, not user input.
+        svg.innerHTML = pathData;
+        return svg;
+    }
+
+    const SVG_CHECK  = '<polyline points="20 6 9 17 4 12"></polyline>';
+    const SVG_ALERT  = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
+
     function setValidation(isValid, message) {
-        if (isValid) {
-            elements.validationMsg.className = 'validation-msg success';
-            elements.validationMsg.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg><span>${message}</span>`;
-        } else {
-            elements.validationMsg.className = 'validation-msg error';
-            elements.validationMsg.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>${message}</span>`;
-        }
+        const msg = elements.validationMsg;
+        msg.className = isValid ? 'validation-msg success' : 'validation-msg error';
+        // Clear previous content safely
+        while (msg.firstChild) msg.removeChild(msg.firstChild);
+
+        msg.appendChild(makeSvgIcon(isValid ? SVG_CHECK : SVG_ALERT));
+
+        const textSpan = document.createElement('span');
+        // Use textContent so error messages from JSON.parse cannot inject markup.
+        textSpan.textContent = message;
+        msg.appendChild(textSpan);
     }
 
     function formatJson() {
@@ -245,16 +279,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function copyToClipboard() {
         if (!elements.jsonInput.value.trim()) return;
-        
+
         navigator.clipboard.writeText(elements.jsonInput.value).then(() => {
-            // Visual feedback
-            const originalHTML = elements.copyBtn.innerHTML;
+            // Snapshot original children via cloneNode to avoid storing/restoring innerHTML.
+            const originalChildren = Array.from(elements.copyBtn.childNodes).map(n => n.cloneNode(true));
+
             elements.copyBtn.classList.add('copy-success');
-            elements.copyBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Copied!</span>`;
-            
+            // Build "Copied!" state with safe DOM APIs
+            while (elements.copyBtn.firstChild) elements.copyBtn.removeChild(elements.copyBtn.firstChild);
+            const ns = 'http://www.w3.org/2000/svg';
+            const checkSvg = document.createElementNS(ns, 'svg');
+            checkSvg.setAttribute('viewBox', '0 0 24 24');
+            checkSvg.setAttribute('width', '18');
+            checkSvg.setAttribute('height', '18');
+            checkSvg.setAttribute('stroke', 'currentColor');
+            checkSvg.setAttribute('stroke-width', '2');
+            checkSvg.setAttribute('fill', 'none');
+            checkSvg.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>'; // static constant
+            const copiedLabel = document.createElement('span');
+            copiedLabel.textContent = 'Copied!';
+            elements.copyBtn.appendChild(checkSvg);
+            elements.copyBtn.appendChild(copiedLabel);
+
             setTimeout(() => {
                 elements.copyBtn.classList.remove('copy-success');
-                elements.copyBtn.innerHTML = originalHTML;
+                while (elements.copyBtn.firstChild) elements.copyBtn.removeChild(elements.copyBtn.firstChild);
+                originalChildren.forEach(n => elements.copyBtn.appendChild(n));
             }, 2000);
         }).catch(err => {
             console.error('Failed to copy text: ', err);
@@ -359,24 +409,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 valSpan.classList.add('boolean');
             }
             
-            // Editable tree value feature
-            valSpan.contentEditable = "true";
-            valSpan.spellcheck = false;
-            valSpan.style.outline = "none";
-            valSpan.style.borderBottom = "1px dashed transparent";
-            
-            valSpan.onfocus = () => {
-                valSpan.style.borderBottom = "1px dashed var(--text-secondary)";
-            };
-            
-            valSpan.onblur = () => {
-                valSpan.style.borderBottom = "1px dashed transparent";
-                // On blur, we would ideally sync this back to the main JSON.
-                // For a simple implementation, we update the UI, but true sync 
-                // requires path tracking. Here we just allow visual edits.
-                // If they edit in tree mode, we can show a toast that "Tree edits are visual only for now"
-                // or we could implement a full two-way sync.
-            };
+            // contentEditable removed: it allowed pasting arbitrary HTML/JS into the DOM
+            // (stored-XSS risk). Tree view is intentionally read-only for now.
 
             row.appendChild(valSpan);
             
