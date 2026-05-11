@@ -318,6 +318,53 @@ body {
     outline: none;
 }
 
+/* Empty-state overlay (shown when textarea is blank) */
+.empty-state {
+    display: none; /* toggled by JS */
+    position: absolute;
+    inset: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    pointer-events: none; /* let clicks through to the textarea */
+    background: radial-gradient(ellipse at center, rgba(59,130,246,0.04) 0%, transparent 70%);
+    animation: fadeIn 0.3s ease;
+    text-align: center;
+    padding: var(--spacing-lg);
+}
+
+.empty-state svg {
+    color: var(--text-secondary);
+    opacity: 0.4;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+.empty-state #load-sample-btn {
+    pointer-events: auto; /* the button itself must be clickable */
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    margin-top: var(--spacing-xs);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.empty-state #load-sample-btn:hover {
+    background-color: var(--accent-primary-hover);
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.45);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Tree Editor */
 .tree-container {
     padding: var(--spacing-md);

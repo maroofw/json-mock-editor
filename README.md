@@ -1,5 +1,7 @@
 # JSON Mock Editor
 
+**[Live Demo → maroofw.github.io/json-mock-editor](https://maroofw.github.io/json-mock-editor/)**
+
 A fully offline, zero-dependency, simple and clean web application designed to help developers effortlessly create, edit and format JSON mock responses. This tool was specifically built to streamline pasting mock data into **Android Studio's Network Inspector**, but is perfect for any workflow requiring quick JSON manipulation.
 
 ## Features
@@ -9,7 +11,8 @@ A fully offline, zero-dependency, simple and clean web application designed to h
 - **Smart JSON Editor**: 
   - Real-time syntax validation.
   - One-click **Prettify** and **Minify** formatting.
-- **Interactive Tree View**: Automatically parses JSON into a beautifully syntax-highlighted, collapsible tree. You can even click on primitive values (strings, numbers, booleans) to edit them inline.
+  - **Load Sample** button instantly populates a realistic API response when the editor is empty.
+- **Interactive Tree View**: Automatically parses JSON into a beautifully syntax-highlighted, collapsible tree.
 - **Local Storage Management**: Save and organize multiple API mock responses in the sidebar. They persist between sessions using your browser's local storage.
 - **Android Studio Ready**: A prominent "Copy Mock" button copies the finalized JSON directly to your clipboard, perfectly formatted to be pasted into an Android Studio Network Inspector rule.
 

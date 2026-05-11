@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
         treeContainer: document.getElementById('tree-container'),
         validationMsg: document.getElementById('validation-msg'),
         charCount: document.getElementById('char-count'),
+        emptyState: document.getElementById('empty-state'),
+        loadSampleBtn: document.getElementById('load-sample-btn'),
     };
 
     // State
@@ -22,6 +24,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeMockId = null;
     let parsedJsonCache = null; // Holds valid JSON object
     let isEditing = false; // Tracks unsaved changes
+
+    const SAMPLE_JSON = JSON.stringify({
+        status: 200,
+        message: "Success",
+        data: {
+            user: {
+                id: 1,
+                name: "Jane Doe",
+                email: "jane.doe@example.com",
+                roles: ["admin", "editor"]
+            },
+            pagination: {
+                page: 1,
+                pageSize: 20,
+                totalItems: 84,
+                totalPages: 5
+            }
+        },
+        timestamp: "2026-05-11T22:00:00Z"
+    }, null, 2);
 
     // Initialize
     init();
@@ -50,6 +72,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Input Changes
         elements.mockNameInput.addEventListener('input', () => setUnsaved(true));
         elements.jsonInput.addEventListener('input', handleJsonInput);
+
+        // Sample JSON loader
+        elements.loadSampleBtn.addEventListener('click', () => {
+            elements.jsonInput.value = SAMPLE_JSON;
+            handleJsonInput();
+            elements.jsonInput.focus();
+        });
         
         // Tabs
         elements.tabs.forEach(tab => {
@@ -92,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newMock = {
             id: Date.now().toString(),
             name: 'New Mock Response',
-            content: '{\n  \n}'
+            content: ''
         };
         mocks.unshift(newMock);
         saveMocksToStorage();
@@ -115,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.jsonInput.value = mock.content;
         
         setUnsaved(false);
-        handleJsonInput(); // trigger validation and tree render
+        handleJsonInput(); // trigger validation, tree render, and empty-state
         renderSidebar();
     }
 
@@ -205,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setUnsaved(true);
         const raw = elements.jsonInput.value;
         elements.charCount.textContent = `${raw.length} chars`;
+        toggleEmptyState(raw);
 
         if (!raw.trim()) {
             setValidation(false, 'Empty');
@@ -225,6 +255,11 @@ document.addEventListener('DOMContentLoaded', () => {
             parsedJsonCache = null;
             setValidation(false, e.message);
         }
+    }
+
+    function toggleEmptyState(raw) {
+        const isEmpty = !raw || !raw.trim();
+        elements.emptyState.style.display = isEmpty ? 'flex' : 'none';
     }
 
     // Build validation UI with safe DOM APIs — no innerHTML with user-controlled data.
