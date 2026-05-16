@@ -3,6 +3,7 @@
     --bg-base: #0f1115;
     --bg-surface: #1a1d24;
     --bg-surface-hover: #232730;
+    --bg-editor: #12141a;
     --border-color: #2e323b;
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
@@ -21,6 +22,13 @@
     --json-boolean: #fca5a5;
     --json-null: #d8b4fe;
 
+    /* Sidebar glass overlay */
+    --sidebar-bg: rgba(26, 29, 36, 0.6);
+
+    /* Scrollbar */
+    --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+
     /* Metrics */
     --radius-sm: 6px;
     --radius-md: 10px;
@@ -29,6 +37,65 @@
     --spacing-sm: 8px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
+}
+
+/* ---- Light Theme Overrides ---- */
+[data-theme="light"] {
+    --bg-base: #f0f2f5;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #e8eaef;
+    --bg-editor: #f8f9fb;
+    --border-color: #d1d5db;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+
+    --accent-primary: #2563eb;
+    --accent-primary-hover: #1d4ed8;
+    --accent-success: #059669;
+    --accent-error: #dc2626;
+    --accent-warning: #d97706;
+
+    --json-key: #0369a1;
+    --json-string: #15803d;
+    --json-number: #b45309;
+    --json-boolean: #be123c;
+    --json-null: #7c3aed;
+
+    --sidebar-bg: rgba(255, 255, 255, 0.7);
+    --scrollbar-thumb: rgba(0, 0, 0, 0.12);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.22);
+}
+
+/* ---- Theme Toggle Button ---- */
+.theme-toggle {
+    background: var(--bg-surface-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+    color: var(--text-primary);
+    background: var(--border-color);
+    transform: rotate(15deg);
+}
+
+.theme-toggle svg {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.theme-toggle:active svg {
+    transform: scale(0.85);
 }
 
 * {
@@ -53,7 +120,7 @@ body {
 /* Sidebar */
 .sidebar {
     width: 280px;
-    background-color: rgba(26, 29, 36, 0.6);
+    background-color: var(--sidebar-bg);
     backdrop-filter: blur(12px);
     border-right: 1px solid var(--border-color);
     display: flex;
@@ -281,7 +348,7 @@ body {
     position: relative;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
-    background-color: #12141a;
+    background-color: var(--bg-editor);
     overflow: hidden;
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
 }
@@ -460,12 +527,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--scrollbar-thumb-hover);
 }
 
 /* Animations */
